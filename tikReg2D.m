@@ -1,15 +1,27 @@
-function X = tikReg2D(data,smoothing)
-%Expects a 2D matrix for data. 
+function [X,A,T] = tikReg2D(slice,lambda)
+% tikReg2D() generates a surface to fit to the data in "slice". Based on
+% John D'Errico's Gridfit. Zeros are ignored from the fit, tikhonov
+% regularization allows for fitting a surface over data with large holes or
+% missing data.
+%
+% slice == data to fit a surface over (will fit to non-zero data in the
+% array), 2D matrix
+% lambda == smoothing paramter, the higher the value, the smoother the fit
+%
+% W. Quinn Meadus, June 2019
 
-s = size(data);
+s = size(slice);
 ny = s(1);
 nx = s(2);
 
-b = data(data(:)>0); %rhs data, assuming 0 values are to be excluded from the fit
-bind = find(data(:)); %rhs location in full grid
+%Tikhonov regularizer
+%min(Ax-b+(lambda)*Tx)
+
+b = slice(slice(:)>0); %rhs data, assuming 0 values are to be excluded from the fit
+bind = find(slice(:)); %rhs location in full grid
 
 nb = length(b);
-ngrid = length(data(:));
+ngrid = length(slice(:));
 
 %Holds the information for the location of each b value in the full grid
 %(bInd) while having a row corresponding to each b value.
@@ -37,8 +49,8 @@ T = [T1;T2];
 b = [b;zeros(size(T,1),1)];
 
 %solving the minimization problem (tikhonov regularization solution)
-AT = [A;smoothing*T];
-X = reshape((AT'*AT)\(AT'*b),ny,nx); %Here matlab's \ solver is used to solve the minimization problem.
+AT = [A;lambda*T];
+X = reshape((AT'*AT)\(AT'*b),ny,nx);
 
 
 
